@@ -8,5 +8,5 @@ config = rx.Config(
     ],
     frontend_port=3035,
     backend_port=8035,
-    api_url="http://localhost:8035",
+    api_url="http://172.13.0.50:8035",
 )

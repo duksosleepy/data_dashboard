@@ -5,3 +5,4 @@ assets/external/
 *.db
 __pycache__/
 .python-version
+.env
