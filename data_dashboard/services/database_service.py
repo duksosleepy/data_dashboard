@@ -10,7 +10,9 @@ class DatabaseService:
     """Service layer for DuckDB database operations."""
 
     def __init__(self, db_path: str = None):
-        self.db_path = db_path or os.getenv("DB_PATH", "/home/khoi/code/crm-restate/orders.db")
+        self.db_path = db_path or os.getenv(
+            "DB_PATH", "/home/khoi/code/crm-restate/orders.db"
+        )
         self._connection = None
 
     def get_connection(self):
@@ -218,12 +220,18 @@ class DatabaseService:
             # Convert to chart format
             records = []
             for _, row in df.iterrows():
-                date_obj = pd.to_datetime(row['stat_date'])
-                records.append({
-                    "date": date_obj.strftime("%b %d"),
-                    "series1": int(row['failed_tasks']) if not pd.isna(row['failed_tasks']) else 0,
-                    "series2": int(row['completed_tasks']) if not pd.isna(row['completed_tasks']) else 0,
-                })
+                date_obj = pd.to_datetime(row["stat_date"])
+                records.append(
+                    {
+                        "date": date_obj.strftime("%b %d"),
+                        "series1": int(row["failed_tasks"])
+                        if not pd.isna(row["failed_tasks"])
+                        else 0,
+                        "series2": int(row["completed_tasks"])
+                        if not pd.isna(row["completed_tasks"])
+                        else 0,
+                    }
+                )
 
             return records
 
@@ -231,15 +239,18 @@ class DatabaseService:
             print(f"Error fetching daily task stats: {e}")
             # Fallback to empty data with proper structure
             import datetime
+
             today = datetime.date.today()
             records = []
             for i in range(days):
                 date = today - datetime.timedelta(days=i)
-                records.append({
-                    "date": date.strftime("%b %d"),
-                    "series1": 0,
-                    "series2": 0,
-                })
+                records.append(
+                    {
+                        "date": date.strftime("%b %d"),
+                        "series1": 0,
+                        "series2": 0,
+                    }
+                )
             return list(reversed(records))
 
     def get_monthly_revenue(self, months_ago: int = 0) -> float:
@@ -254,8 +265,8 @@ class DatabaseService:
             """
             result = con.execute(query).fetchone()
             return float(result[0]) if result[0] else 0.0
-        except Exception as e:
-            print(f"Error fetching monthly revenue: {{e}}")
+        except Exception:
+            print("Error fetching monthly revenue: {e}")
             return 0.0
 
     def get_monthly_failed_tasks(self, months_ago: int = 0) -> int:
@@ -270,8 +281,8 @@ class DatabaseService:
             """
             result = con.execute(query).fetchone()
             return int(result[0]) if result[0] else 0
-        except Exception as e:
-            print(f"Error fetching monthly failed tasks: {{e}}")
+        except Exception:
+            print("Error fetching monthly failed tasks: {e}")
             return 0
 
     def get_monthly_completed_tasks(self, months_ago: int = 0) -> int:
@@ -286,8 +297,8 @@ class DatabaseService:
             """
             result = con.execute(query).fetchone()
             return int(result[0]) if result[0] else 0
-        except Exception as e:
-            print(f"Error fetching monthly completed tasks: {{e}}")
+        except Exception:
+            print("Error fetching monthly completed tasks: {e}")
             return 0
 
 
