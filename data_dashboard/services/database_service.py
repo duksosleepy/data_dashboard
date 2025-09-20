@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -8,8 +9,8 @@ import pandas as pd
 class DatabaseService:
     """Service layer for DuckDB database operations."""
 
-    def __init__(self, db_path: str = "/home/khoi/code/crm-restate/orders.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: str = None):
+        self.db_path = db_path or os.getenv("DB_PATH", "/home/khoi/code/crm-restate/orders.db")
         self._connection = None
 
     def get_connection(self):
