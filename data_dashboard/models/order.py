@@ -22,3 +22,4 @@ class OrderEntry(TypedDict):
     quantity: str  # "Số lượng"
     revenue: str  # "Doanh thu"
     error_code: str  # "Ghi chú"
+    source_type: str  # "Nguồn"

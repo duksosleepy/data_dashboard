@@ -36,7 +36,7 @@ def orders_table_header_cell(name: str, is_sortable: bool = True) -> rx.Componen
             ),
         ),
         scope="col",
-        class_name="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none",
+        class_name="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 select-none",
     )
 
 
@@ -57,7 +57,7 @@ def orders_table() -> rx.Component:
                                 disabled=DashboardState.orders_paginated_data.length() <= 0,
                             ),
                             scope="col",
-                            class_name="px-4 py-2 whitespace-nowrap w-12",
+                            class_name="px-3 py-3 whitespace-nowrap w-12 bg-gray-50 border-b border-gray-200",
                         ),
                         rx.foreach(
                             DashboardState.orders_column_names,
@@ -66,7 +66,8 @@ def orders_table() -> rx.Component:
                                 is_sortable=name != "Edit",
                             ),
                         ),
-                    )
+                    ),
+                    class_name="sticky top-0 z-10 bg-gray-50",
                 ),
                 rx.el.tbody(
                     rx.foreach(
@@ -79,75 +80,79 @@ def orders_table() -> rx.Component:
                                     on_change=lambda: DashboardState.toggle_orders_row_selection(row["id"]),
                                     checked=DashboardState.orders_selected_rows.contains(row["id"]),
                                 ),
-                                class_name="px-4 py-2 whitespace-nowrap w-12",
+                                class_name="px-3 py-2 whitespace-nowrap w-12 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["order_date"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["document_type"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["document_number"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["department_code"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["order_id"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["customer_name"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["phone_number"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["province"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["district"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["ward"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["address"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100 max-w-xs truncate",
                             ),
                             rx.el.td(
                                 row["product_code"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["product_name"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100 max-w-xs truncate",
                             ),
                             rx.el.td(
                                 row["imei"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["quantity"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["revenue"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 row["error_code"],
-                                class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
+                            ),
+                            rx.el.td(
+                                row["source_type"],
+                                class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                             ),
                             rx.el.td(
                                 rx.el.button(
@@ -158,15 +163,16 @@ def orders_table() -> rx.Component:
                                     variant="ghost",
                                     class_name="text-gray-400 hover:text-gray-600",
                                 ),
-                                class_name="px-4 py-2 whitespace-nowrap text-right text-sm font-medium",
+                                class_name="px-3 py-2 whitespace-nowrap text-right text-sm font-medium border-b border-gray-100",
                             ),
-                            class_name="hover:bg-gray-50",
+                            class_name="hover:bg-gray-50 bg-white",
                         ),
-                    )
+                    ),
+                    class_name="divide-y divide-gray-100",
                 ),
-                class_name="min-w-full divide-y divide-gray-200",
+                class_name="min-w-full",
             ),
-            class_name="overflow-x-auto",
+            class_name="overflow-auto border border-gray-200 rounded-lg",
         ),
         rx.el.div(
             rx.el.p(
@@ -198,7 +204,7 @@ def orders_table() -> rx.Component:
                 ),
                 class_name="flex items-center",
             ),
-            class_name="flex items-center justify-between mt-4 px-4 py-2 border-t border-gray-200",
+            class_name="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-white rounded-b-lg",
         ),
-        class_name="border border-gray-200 rounded",
+        class_name="shadow-sm",
     )

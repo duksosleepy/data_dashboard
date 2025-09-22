@@ -3,9 +3,10 @@ import reflex as rx
 from data_dashboard.components.details_table import details_table
 from data_dashboard.components.filter_dropdown import (
     costs_filter_dropdown,
+    export_dropdown,
     filter_button,
     orders_product_filter_dropdown,
-    orders_province_filter_dropdown,
+    orders_type_filter_dropdown,
     orders_revenue_filter_dropdown,
     region_filter_dropdown,
     status_filter_dropdown,
@@ -13,6 +14,8 @@ from data_dashboard.components.filter_dropdown import (
 from data_dashboard.components.header import header_bar
 from data_dashboard.components.key_metrics import key_metrics_section
 from data_dashboard.components.orders_table import orders_table
+from data_dashboard.components.orders_summary import orders_summary_section
+from data_dashboard.components.product_codes_table import product_codes_table
 from data_dashboard.components.sidebar import sidebar
 from data_dashboard.components.visitors_chart import visitors_chart_section
 from data_dashboard.states.dashboard_state import DashboardState
@@ -38,13 +41,13 @@ def orders_table_header() -> rx.Component:
             rx.el.div(
                 rx.el.div(
                     filter_button(
-                        "Province",
-                        on_click=DashboardState.toggle_orders_province_filter,
-                        is_active=DashboardState.show_orders_province_filter,
-                        has_filter=DashboardState.orders_selected_provinces.length()
+                        "Type",
+                        on_click=DashboardState.toggle_orders_type_filter,
+                        is_active=DashboardState.show_orders_type_filter,
+                        has_filter=DashboardState.orders_selected_types.length()
                         > 0,
                     ),
-                    orders_province_filter_dropdown(),
+                    orders_type_filter_dropdown(),
                     class_name="relative",
                 ),
                 rx.el.div(
@@ -92,7 +95,7 @@ def orders_table_header() -> rx.Component:
                         class_name="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-700 hover:bg-gray-50",
                         disabled=(DashboardState.orders_search_customer == "")
                         & (
-                            DashboardState.orders_selected_provinces.length()
+                            DashboardState.orders_selected_types.length()
                             == 0
                         )
                         & (
@@ -116,17 +119,32 @@ def orders_table_header() -> rx.Component:
                 class_name="flex items-center space-x-2 flex-wrap gap-y-2",
             ),
             rx.el.div(
-                rx.el.button(
-                    rx.icon(
-                        tag="upload",
-                        size=16,
-                        class_name="mr-1.5",
+                rx.el.div(
+                    rx.el.button(
+                        rx.icon(
+                            tag="upload",
+                            size=16,
+                            class_name="mr-1.5",
+                        ),
+                        "Export",
+                        rx.icon(
+                            tag="chevron_down",
+                            size=14,
+                            class_name="ml-1",
+                        ),
+                        on_click=DashboardState.toggle_orders_export_dropdown,
+                        disabled=DashboardState.orders_filtered_and_sorted_data.length()
+                        <= 0,
+                        class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
                     ),
-                    "Export",
-                    on_click=DashboardState.download_orders_csv,
-                    disabled=DashboardState.orders_filtered_and_sorted_data.length()
-                    <= 0,
-                    class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
+                    export_dropdown(
+                        show_dropdown=DashboardState.show_orders_export_dropdown,
+                        csv_action=DashboardState.download_orders_csv,
+                        xlsx_action=DashboardState.download_orders_xlsx,
+                        is_disabled=DashboardState.orders_filtered_and_sorted_data.length()
+                        <= 0,
+                    ),
+                    class_name="relative",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -226,17 +244,32 @@ def data_table_header() -> rx.Component:
                 class_name="flex items-center space-x-2 flex-wrap gap-y-2",
             ),
             rx.el.div(
-                rx.el.button(
-                    rx.icon(
-                        tag="upload",
-                        size=16,
-                        class_name="mr-1.5",
+                rx.el.div(
+                    rx.el.button(
+                        rx.icon(
+                            tag="upload",
+                            size=16,
+                            class_name="mr-1.5",
+                        ),
+                        "Export",
+                        rx.icon(
+                            tag="chevron_down",
+                            size=14,
+                            class_name="ml-1",
+                        ),
+                        on_click=DashboardState.toggle_export_dropdown,
+                        disabled=DashboardState.filtered_and_sorted_data.length()
+                        <= 0,
+                        class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
                     ),
-                    "Export",
-                    on_click=DashboardState.download_csv,
-                    disabled=DashboardState.filtered_and_sorted_data.length()
-                    <= 0,
-                    class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
+                    export_dropdown(
+                        show_dropdown=DashboardState.show_export_dropdown,
+                        csv_action=DashboardState.download_csv,
+                        xlsx_action=DashboardState.download_xlsx,
+                        is_disabled=DashboardState.filtered_and_sorted_data.length()
+                        <= 0,
+                    ),
+                    class_name="relative",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -300,17 +333,32 @@ def secondary_data_table_header() -> rx.Component:
                 class_name="flex items-center space-x-2 flex-wrap gap-y-2",
             ),
             rx.el.div(
-                rx.el.button(
-                    rx.icon(
-                        tag="upload",
-                        size=16,
-                        class_name="mr-1.5",
+                rx.el.div(
+                    rx.el.button(
+                        rx.icon(
+                            tag="upload",
+                            size=16,
+                            class_name="mr-1.5",
+                        ),
+                        "Export",
+                        rx.icon(
+                            tag="chevron_down",
+                            size=14,
+                            class_name="ml-1",
+                        ),
+                        on_click=DashboardState.toggle_secondary_export_dropdown,
+                        disabled=DashboardState.secondary_filtered_and_sorted_data.length()
+                        <= 0,
+                        class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
                     ),
-                    "Export",
-                    on_click=DashboardState.download_secondary_csv,
-                    disabled=DashboardState.secondary_filtered_and_sorted_data.length()
-                    <= 0,
-                    class_name="flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition disabled:opacity-50 disabled:cursor-not-allowed",
+                    export_dropdown(
+                        show_dropdown=DashboardState.show_secondary_export_dropdown,
+                        csv_action=DashboardState.download_secondary_csv,
+                        xlsx_action=DashboardState.download_secondary_xlsx,
+                        is_disabled=DashboardState.secondary_filtered_and_sorted_data.length()
+                        <= 0,
+                    ),
+                    class_name="relative",
                 ),
                 rx.el.button(
                     rx.icon(
@@ -331,18 +379,34 @@ def secondary_data_table_header() -> rx.Component:
 def data_section() -> rx.Component:
     """The Data section containing table dashboard components."""
     return rx.el.div(
-        orders_table_header(),
+        # Main tables section (Orders and Error data)
         rx.el.div(
-            orders_table(),
-            class_name="mt-6",
-        ),
-        rx.el.div(
-            secondary_data_table_header(),
+            orders_table_header(),
             rx.el.div(
-                details_table(is_secondary=True),
+                orders_table(),
                 class_name="mt-6",
             ),
-            class_name="mt-8",
+            rx.el.div(
+                secondary_data_table_header(),
+                rx.el.div(
+                    details_table(is_secondary=True),
+                    class_name="mt-6",
+                ),
+                class_name="mt-8",
+            ),
+            class_name="space-y-6 mb-8",
+        ),
+        # New layout section (similar to account_section and summary_section)
+        rx.el.div(
+            rx.el.div(
+                product_codes_table(),
+                class_name="flex-grow pr-0 lg:pr-8 mb-8 lg:mb-0",
+            ),
+            rx.el.div(
+                orders_summary_section(),
+                class_name="w-full lg:w-80 flex-shrink-0",
+            ),
+            class_name="flex flex-col lg:flex-row",
         ),
         class_name="space-y-6",
     )

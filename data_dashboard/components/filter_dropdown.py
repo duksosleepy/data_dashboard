@@ -68,7 +68,7 @@ def status_filter_dropdown(is_secondary: bool = False) -> rx.Component:
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-10 bg-white shadow-lg",
+        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-50 bg-white shadow-lg",
         hidden=~show_filter,
     )
 
@@ -117,7 +117,7 @@ def region_filter_dropdown(is_secondary: bool = False) -> rx.Component:
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-10 bg-white shadow-lg",
+        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-50 bg-white shadow-lg",
         hidden=~show_filter,
     )
 
@@ -174,7 +174,7 @@ def costs_filter_dropdown(is_secondary: bool = False) -> rx.Component:
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-48 border border-gray-300 rounded z-10 bg-white shadow-lg",
+        class_name="absolute top-full left-0 mt-1 w-48 border border-gray-300 rounded z-50 bg-white shadow-lg",
         hidden=~show_filter,
     )
 
@@ -204,20 +204,20 @@ def filter_button(
 
 
 # Orders table filter dropdowns
-def orders_province_filter_dropdown() -> rx.Component:
-    """Dropdown component for filtering by Province in orders table."""
+def orders_type_filter_dropdown() -> rx.Component:
+    """Dropdown component for filtering by Type in orders table."""
     return rx.el.div(
         rx.el.p(
-            "Filter by Province",
+            "Filter by Type",
             class_name="text-xs font-semibold text-gray-500 px-3 pt-2 pb-1",
         ),
         rx.el.div(
             rx.foreach(
-                DashboardState.unique_provinces,
-                lambda province: filter_checkbox_item(
-                    label=province,
-                    is_checked=DashboardState.orders_temp_selected_provinces.contains(province),
-                    on_change=DashboardState.toggle_orders_temp_province,
+                DashboardState.unique_types,
+                lambda source_type: filter_checkbox_item(
+                    label=source_type,
+                    is_checked=DashboardState.orders_temp_selected_types.contains(source_type),
+                    on_change=DashboardState.toggle_orders_temp_type,
                 ),
             ),
             class_name="max-h-48 overflow-y-auto p-1",
@@ -225,18 +225,18 @@ def orders_province_filter_dropdown() -> rx.Component:
         rx.el.div(
             rx.el.button(
                 "Reset",
-                on_click=DashboardState.reset_orders_province_filter,
+                on_click=DashboardState.reset_orders_type_filter,
                 class_name="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded",
             ),
             rx.el.button(
                 "Apply",
-                on_click=DashboardState.apply_orders_province_filter,
+                on_click=DashboardState.apply_orders_type_filter,
                 class_name="px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded",
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-10 bg-white shadow-lg",
-        hidden=~DashboardState.show_orders_province_filter,
+        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-50 bg-white shadow-lg",
+        hidden=~DashboardState.show_orders_type_filter,
     )
 
 
@@ -271,7 +271,7 @@ def orders_product_filter_dropdown() -> rx.Component:
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-10 bg-white shadow-lg",
+        class_name="absolute top-full left-0 mt-1 w-56 border border-gray-300 rounded z-50 bg-white shadow-lg",
         hidden=~DashboardState.show_orders_product_filter,
     )
 
@@ -311,6 +311,37 @@ def orders_revenue_filter_dropdown() -> rx.Component:
             ),
             class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
         ),
-        class_name="absolute top-full left-0 mt-1 w-48 border border-gray-300 rounded z-10 bg-white shadow-lg",
+        class_name="absolute top-full left-0 mt-1 w-48 border border-gray-300 rounded z-50 bg-white shadow-lg",
         hidden=~DashboardState.show_orders_revenue_filter,
+    )
+
+
+def export_dropdown(
+    show_dropdown: rx.Var[bool],
+    csv_action: EventSpec,
+    xlsx_action: EventSpec,
+    is_disabled: rx.Var[bool] = False,
+) -> rx.Component:
+    """Reusable export dropdown component with CSV and XLSX options."""
+    return rx.el.div(
+        rx.el.div(
+            rx.el.button(
+                rx.icon(tag="file_text", size=16, class_name="mr-2"),
+                "CSV",
+                on_click=csv_action,
+                disabled=is_disabled,
+                class_name="flex items-center w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed",
+            ),
+            rx.el.button(
+                rx.icon(tag="file_spreadsheet", size=16, class_name="mr-2"),
+                "XLSX",
+                on_click=xlsx_action,
+                disabled=is_disabled,
+                class_name="flex items-center w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed",
+            ),
+            class_name="py-1",
+        ),
+        class_name="absolute top-full right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50",
+        style={"width": "100px"},  # Match export button width
+        hidden=~show_dropdown,
     )

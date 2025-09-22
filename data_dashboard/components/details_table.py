@@ -71,7 +71,7 @@ def table_header_cell(name: str, is_sortable: bool = True, is_secondary: bool = 
             ),
         ),
         scope="col",
-        class_name="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider select-none",
+        class_name="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50 border-b border-gray-200 select-none",
     )
 
 
@@ -123,7 +123,7 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                 disabled=paginated_data.length() <= 0,
                             ),
                             scope="col",
-                            class_name="px-4 py-2 whitespace-nowrap w-12",
+                            class_name="px-3 py-3 whitespace-nowrap w-12 bg-gray-50 border-b border-gray-200",
                         ),
                         rx.foreach(
                             rx.cond(
@@ -137,7 +137,8 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                 is_secondary=is_secondary,
                             ),
                         ),
-                    )
+                    ),
+                    class_name="sticky top-0 z-10 bg-gray-50",
                 ),
                 rx.el.tbody(
                     rx.foreach(
@@ -150,7 +151,7 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                     on_change=lambda: toggle_row_selection(row["id"]),
                                     checked=selected_rows.contains(row["id"]),
                                 ),
-                                class_name="px-4 py-2 whitespace-nowrap w-12",
+                                class_name="px-3 py-2 whitespace-nowrap w-12 border-b border-gray-100",
                             ),
                             rx.cond(
                                 is_secondary,
@@ -158,11 +159,11 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                 rx.fragment(
                                     rx.el.td(
                                         row["order_id"],
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         row["error_code"],
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         rx.el.button(
@@ -173,34 +174,34 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                             variant="ghost",
                                             class_name="text-gray-400 hover:text-gray-600",
                                         ),
-                                        class_name="px-4 py-2 whitespace-nowrap text-right text-sm font-medium",
+                                        class_name="px-3 py-2 whitespace-nowrap text-right text-sm font-medium border-b border-gray-100",
                                     ),
                                 ),
                                 # Primary table: original columns
                                 rx.fragment(
                                     rx.el.td(
                                         row["owner"],
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         status_badge(row["status"]),
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         row["region"],
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         row["stability"].to_string(),
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         "$" + row["costs"].to_string(),
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         row["last_edited"],
-                                        class_name="px-4 py-2 whitespace-nowrap text-sm text-gray-500",
+                                        class_name="px-3 py-2 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100",
                                     ),
                                     rx.el.td(
                                         rx.el.button(
@@ -211,17 +212,18 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                             variant="ghost",
                                             class_name="text-gray-400 hover:text-gray-600",
                                         ),
-                                        class_name="px-4 py-2 whitespace-nowrap text-right text-sm font-medium",
+                                        class_name="px-3 py-2 whitespace-nowrap text-right text-sm font-medium border-b border-gray-100",
                                     ),
                                 ),
                             ),
-                            class_name="hover:bg-gray-50",
+                            class_name="hover:bg-gray-50 bg-white",
                         ),
-                    )
+                    ),
+                    class_name="divide-y divide-gray-100",
                 ),
-                class_name="min-w-full divide-y divide-gray-200",
+                class_name="min-w-full",
             ),
-            class_name="overflow-x-auto",
+            class_name="overflow-auto border border-gray-200 rounded-lg",
         ),
         rx.el.div(
             rx.el.p(
@@ -253,7 +255,7 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                 ),
                 class_name="flex items-center",
             ),
-            class_name="flex items-center justify-between mt-4 px-4 py-2 border-t border-gray-200",
+            class_name="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-white rounded-b-lg",
         ),
-        class_name="border border-gray-200 rounded",
+        class_name="shadow-sm",
     )

@@ -47,6 +47,8 @@ class DashboardState(rx.State):
     _data: List[DetailEntry] = raw_data
     _orders_data: List[OrderEntry] = []
     _orders_error_data: List[dict] = []
+    _product_codes_data: List[dict] = []
+    orders_status_summary: dict = {}
 
     # Column names for orders table (Vietnamese headers)
     orders_column_names: List[str] = [
@@ -67,6 +69,7 @@ class DashboardState(rx.State):
         "Số lượng",
         "Doanh thu",
         "Ghi chú",
+        "Nguồn",
         "Edit",
     ]
 
@@ -78,15 +81,15 @@ class DashboardState(rx.State):
     ]
     # Orders table state (for first table)
     orders_search_customer: str = ""
-    orders_selected_provinces: Set[str] = set()
+    orders_selected_types: Set[str] = set()
     orders_selected_products: Set[str] = set()
     orders_min_revenue: Optional[float] = None
     orders_max_revenue: Optional[float] = None
-    orders_temp_selected_provinces: Set[str] = set()
+    orders_temp_selected_types: Set[str] = set()
     orders_temp_selected_products: Set[str] = set()
     orders_temp_min_revenue_str: str = ""
     orders_temp_max_revenue_str: str = ""
-    show_orders_province_filter: bool = False
+    show_orders_type_filter: bool = False
     show_orders_product_filter: bool = False
     show_orders_revenue_filter: bool = False
     orders_sort_column: Optional[str] = None
@@ -94,6 +97,7 @@ class DashboardState(rx.State):
     orders_selected_rows: Set[int] = set()
     orders_current_page: int = 1
     orders_rows_per_page: int = 20
+    show_orders_export_dropdown: bool = False
 
     # Original data state (for secondary table)
     search_owner: str = ""
@@ -113,6 +117,7 @@ class DashboardState(rx.State):
     selected_rows: Set[int] = set()
     current_page: int = 1
     rows_per_page: int = 20
+    show_export_dropdown: bool = False
 
     # Secondary table state variables
     secondary_search_owner: str = ""
@@ -132,6 +137,11 @@ class DashboardState(rx.State):
     secondary_selected_rows: Set[int] = set()
     secondary_current_page: int = 1
     secondary_rows_per_page: int = 20
+    show_secondary_export_dropdown: bool = False
+
+    # Product codes table state variables
+    product_codes_current_page: int = 1
+    product_codes_rows_per_page: int = 15
 
     @rx.var
     def has_status_filter(self) -> bool:
@@ -160,10 +170,10 @@ class DashboardState(rx.State):
 
     # Orders table computed properties
     @rx.var
-    def unique_provinces(self) -> List[str]:
-        """Get unique provinces from orders data."""
+    def unique_types(self) -> List[str]:
+        """Get unique source types from orders data."""
         return sorted(
-            {item["province"] for item in self._orders_data if item["province"]}
+            {item["source_type"] for item in self._orders_data if item["source_type"]}
         )
 
     @rx.var
@@ -188,11 +198,11 @@ class DashboardState(rx.State):
                 if self.orders_search_customer.lower()
                 in item["customer_name"].lower()
             ]
-        if self.orders_selected_provinces:
+        if self.orders_selected_types:
             data = [
                 item
                 for item in data
-                if item["province"] in self.orders_selected_provinces
+                if item["source_type"] in self.orders_selected_types
             ]
         if self.orders_selected_products:
             data = [
@@ -592,6 +602,31 @@ class DashboardState(rx.State):
             self.secondary_selected_rows
         )
 
+    # Product codes table computed properties
+    @rx.var
+    def product_codes_total_rows(self) -> int:
+        """Total number of product codes."""
+        return len(self._product_codes_data)
+
+    @rx.var
+    def product_codes_total_pages(self) -> int:
+        """Total number of pages for product codes table."""
+        if self.product_codes_rows_per_page <= 0:
+            return 1
+        return (
+            (self.product_codes_total_rows + self.product_codes_rows_per_page - 1)
+            // self.product_codes_rows_per_page
+            if self.product_codes_rows_per_page > 0
+            else 1
+        )
+
+    @rx.var
+    def product_codes_paginated_data(self) -> List[dict]:
+        """Get the data for the current page of product codes table."""
+        start_index = (self.product_codes_current_page - 1) * self.product_codes_rows_per_page
+        end_index = start_index + self.product_codes_rows_per_page
+        return self._product_codes_data[start_index:end_index]
+
     def _generate_fake_data(self):
         """Generates metrics data with real monthly comparisons."""
         revenue_change, revenue_direction = self.revenue_change_percent
@@ -653,10 +688,20 @@ class DashboardState(rx.State):
         try:
             self._orders_data = db_service.get_orders_data()
             self._orders_error_data = db_service.get_orders_error_data()
+            self._product_codes_data = db_service.get_non_existing_codes()
+            self.orders_status_summary = db_service.get_orders_status_summary()
         except Exception as e:
             print(f"Error loading orders data: {e}")
             self._orders_data = []
             self._orders_error_data = []
+            self._product_codes_data = []
+            self.orders_status_summary = {
+                "total_orders": 0,
+                "online_orders": 0,
+                "offline_orders": 0,
+                "online_percent": 0.0,
+                "offline_percent": 0.0
+            }
 
     @rx.event
     def load_initial_data(self):
@@ -877,6 +922,15 @@ class DashboardState(rx.State):
         self.show_region_filter = False
         self.show_costs_filter = False
 
+
+    def toggle_export_dropdown(self):
+        """Toggle the export dropdown for main table."""
+        # Close other export dropdowns first
+        self.show_orders_export_dropdown = False
+        self.show_secondary_export_dropdown = False
+        # Toggle this dropdown
+        self.show_export_dropdown = not self.show_export_dropdown
+
     @rx.event
     def download_csv(self):
         """Download the filtered and sorted data as CSV."""
@@ -905,6 +959,36 @@ class DashboardState(rx.State):
         return rx.download(
             data=stream.getvalue(),
             filename="details_export.csv",
+        )
+
+    @rx.event
+    def download_xlsx(self):
+        """Download the filtered and sorted data as XLSX."""
+        df = pd.DataFrame(self.filtered_and_sorted_data)
+        display_columns = [
+            col.lower().replace(" ", "_")
+            for col in self.column_names
+            if col != "Edit"
+        ]
+        if "last_edited" not in df.columns and "last_edited" in display_columns:
+            display_columns.remove("last_edited")
+        if "costs" in df.columns and "costs" in display_columns:
+            pass
+        column_mapping = {
+            "owner": "Owner",
+            "status": "Status",
+            "region": "Region",
+            "stability": "Stability",
+            "costs": "Costs",
+            "last_edited": "Last edited",
+        }
+        df_display = df[[key for key in column_mapping if key in df.columns]]
+        df_display.columns = [column_mapping[col] for col in df_display.columns]
+        stream = io.BytesIO()
+        df_display.to_excel(stream, index=False, engine='openpyxl')
+        return rx.download(
+            data=stream.getvalue(),
+            filename="details_export.xlsx",
         )
 
     # Secondary table methods
@@ -1082,6 +1166,14 @@ class DashboardState(rx.State):
         self.secondary_selected_rows = set()
         self.secondary_current_page = 1
 
+    def toggle_secondary_export_dropdown(self):
+        """Toggle the export dropdown for secondary table."""
+        # Close other export dropdowns first
+        self.show_export_dropdown = False
+        self.show_orders_export_dropdown = False
+        # Toggle this dropdown
+        self.show_secondary_export_dropdown = not self.show_secondary_export_dropdown
+
     @rx.event
     def download_secondary_csv(self):
         """Download the secondary filtered and sorted data as CSV."""
@@ -1110,6 +1202,36 @@ class DashboardState(rx.State):
         return rx.download(
             data=stream.getvalue(),
             filename="secondary_details_export.csv",
+        )
+
+    @rx.event
+    def download_secondary_xlsx(self):
+        """Download the secondary filtered and sorted data as XLSX."""
+        df = pd.DataFrame(self.secondary_filtered_and_sorted_data)
+        display_columns = [
+            col.lower().replace(" ", "_")
+            for col in self.column_names
+            if col != "Edit"
+        ]
+        if "last_edited" not in df.columns and "last_edited" in display_columns:
+            display_columns.remove("last_edited")
+        if "costs" in df.columns and "costs" in display_columns:
+            pass
+        column_mapping = {
+            "owner": "Owner",
+            "status": "Status",
+            "region": "Region",
+            "stability": "Stability",
+            "costs": "Costs",
+            "last_edited": "Last edited",
+        }
+        df_display = df[[key for key in column_mapping if key in df.columns]]
+        df_display.columns = [column_mapping[col] for col in df_display.columns]
+        stream = io.BytesIO()
+        df_display.to_excel(stream, index=False, engine='openpyxl')
+        return rx.download(
+            data=stream.getvalue(),
+            filename="secondary_details_export.xlsx",
         )
 
     # Orders table methods
@@ -1156,20 +1278,20 @@ class DashboardState(rx.State):
         else:
             self.orders_selected_rows.update(page_ids)
 
-    def toggle_orders_province_filter(self):
-        is_opening = not self.show_orders_province_filter
-        self.show_orders_province_filter = is_opening
+    def toggle_orders_type_filter(self):
+        is_opening = not self.show_orders_type_filter
+        self.show_orders_type_filter = is_opening
         self.show_orders_product_filter = False
         self.show_orders_revenue_filter = False
         if is_opening:
-            self.orders_temp_selected_provinces = (
-                self.orders_selected_provinces.copy()
+            self.orders_temp_selected_types = (
+                self.orders_selected_types.copy()
             )
 
     def toggle_orders_product_filter(self):
         is_opening = not self.show_orders_product_filter
         self.show_orders_product_filter = is_opening
-        self.show_orders_province_filter = False
+        self.show_orders_type_filter = False
         self.show_orders_revenue_filter = False
         if is_opening:
             self.orders_temp_selected_products = (
@@ -1179,7 +1301,7 @@ class DashboardState(rx.State):
     def toggle_orders_revenue_filter(self):
         is_opening = not self.show_orders_revenue_filter
         self.show_orders_revenue_filter = is_opening
-        self.show_orders_province_filter = False
+        self.show_orders_type_filter = False
         self.show_orders_product_filter = False
         if is_opening:
             self.orders_temp_min_revenue_str = (
@@ -1193,11 +1315,11 @@ class DashboardState(rx.State):
                 else ""
             )
 
-    def toggle_orders_temp_province(self, province: str):
-        if province in self.orders_temp_selected_provinces:
-            self.orders_temp_selected_provinces.remove(province)
+    def toggle_orders_temp_type(self, source_type: str):
+        if source_type in self.orders_temp_selected_types:
+            self.orders_temp_selected_types.remove(source_type)
         else:
-            self.orders_temp_selected_provinces.add(province)
+            self.orders_temp_selected_types.add(source_type)
 
     def toggle_orders_temp_product(self, product: str):
         if product in self.orders_temp_selected_products:
@@ -1211,11 +1333,11 @@ class DashboardState(rx.State):
     def set_orders_temp_max_revenue(self, value: str):
         self.orders_temp_max_revenue_str = value
 
-    def apply_orders_province_filter(self):
-        self.orders_selected_provinces = (
-            self.orders_temp_selected_provinces.copy()
+    def apply_orders_type_filter(self):
+        self.orders_selected_types = (
+            self.orders_temp_selected_types.copy()
         )
-        self.show_orders_province_filter = False
+        self.show_orders_type_filter = False
         self.orders_current_page = 1
 
     def apply_orders_product_filter(self):
@@ -1243,10 +1365,10 @@ class DashboardState(rx.State):
         self.show_orders_revenue_filter = False
         self.orders_current_page = 1
 
-    def reset_orders_province_filter(self):
-        self.orders_temp_selected_provinces = set()
-        self.orders_selected_provinces = set()
-        self.show_orders_province_filter = False
+    def reset_orders_type_filter(self):
+        self.orders_temp_selected_types = set()
+        self.orders_selected_types = set()
+        self.show_orders_type_filter = False
         self.orders_current_page = 1
 
     def reset_orders_product_filter(self):
@@ -1266,15 +1388,15 @@ class DashboardState(rx.State):
     def reset_all_orders_filters(self):
         """Reset all orders filters and search."""
         self.orders_search_customer = ""
-        self.orders_selected_provinces = set()
+        self.orders_selected_types = set()
         self.orders_selected_products = set()
         self.orders_min_revenue = None
         self.orders_max_revenue = None
-        self.orders_temp_selected_provinces = set()
+        self.orders_temp_selected_types = set()
         self.orders_temp_selected_products = set()
         self.orders_temp_min_revenue_str = ""
         self.orders_temp_max_revenue_str = ""
-        self.show_orders_province_filter = False
+        self.show_orders_type_filter = False
         self.show_orders_product_filter = False
         self.show_orders_revenue_filter = False
         self.orders_current_page = 1
@@ -1288,6 +1410,14 @@ class DashboardState(rx.State):
         self._generate_fake_data()  # Regenerate metrics with new revenue data
         self.orders_selected_rows = set()
         self.orders_current_page = 1
+
+    def toggle_orders_export_dropdown(self):
+        """Toggle the export dropdown for orders table."""
+        # Close other export dropdowns first
+        self.show_export_dropdown = False
+        self.show_secondary_export_dropdown = False
+        # Toggle this dropdown
+        self.show_orders_export_dropdown = not self.show_orders_export_dropdown
 
     @rx.event
     def download_orders_csv(self):
@@ -1310,7 +1440,7 @@ class DashboardState(rx.State):
             "order_id": "Mã đơn hàng",
             "customer_name": "Tên khách hàng",
             "phone_number": "Số điện thoại",
-            "province": "Tỉnh thành",
+            "source_type": "Nguồn",
             "district": "Quận huyện",
             "ward": "Phường xã",
             "address": "Địa chỉ",
@@ -1329,6 +1459,63 @@ class DashboardState(rx.State):
             data=stream.getvalue(),
             filename="orders_export.csv",
         )
+
+    @rx.event
+    def download_orders_xlsx(self):
+        """Download the orders filtered and sorted data as XLSX."""
+        df = pd.DataFrame(self.orders_filtered_and_sorted_data)
+        display_columns = [
+            col.lower()
+            .replace(" ", "_")
+            .replace("ã", "a")
+            .replace("ô", "o")
+            .replace("ư", "u")
+            for col in self.orders_column_names
+            if col != "Edit"
+        ]
+        column_mapping = {
+            "order_date": "Ngày Ct",
+            "document_type": "Mã Ct",
+            "document_number": "Số Ct",
+            "department_code": "Mã bộ phận",
+            "order_id": "Mã đơn hàng",
+            "customer_name": "Tên khách hàng",
+            "phone_number": "Số điện thoại",
+            "source_type": "Nguồn",
+            "district": "Quận huyện",
+            "ward": "Phường xã",
+            "address": "Địa chỉ",
+            "product_code": "Mã hàng",
+            "product_name": "Tên hàng",
+            "imei": "Imei",
+            "quantity": "Số lượng",
+            "revenue": "Doanh thu",
+            "error_code": "Ghi chú",
+        }
+        df_display = df[[key for key in column_mapping if key in df.columns]]
+        df_display.columns = [column_mapping[col] for col in df_display.columns]
+        stream = io.BytesIO()
+        df_display.to_excel(stream, index=False, engine='openpyxl')
+        return rx.download(
+            data=stream.getvalue(),
+            filename="orders_export.xlsx",
+        )
+
+    # Product codes table methods
+    def product_codes_go_to_page(self, page_number: int):
+        """Navigate to a specific page in product codes table."""
+        if 1 <= page_number <= self.product_codes_total_pages:
+            self.product_codes_current_page = page_number
+
+    def product_codes_next_page(self):
+        """Go to the next page in product codes table."""
+        if self.product_codes_current_page < self.product_codes_total_pages:
+            self.product_codes_current_page += 1
+
+    def product_codes_previous_page(self):
+        """Go to the previous page in product codes table."""
+        if self.product_codes_current_page > 1:
+            self.product_codes_current_page -= 1
 
 
 TOOLTIP_PROPS = {

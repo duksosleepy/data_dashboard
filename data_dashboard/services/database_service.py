@@ -58,7 +58,8 @@ class DatabaseService:
                     imei as "imei",
                     quantity as "quantity",
                     revenue as "revenue",
-                    error_code as "error_code"
+                    error_code as "error_code",
+                    source_type as "source_type"
                 FROM orders
                 ORDER BY order_date DESC
                 LIMIT 1000
@@ -142,6 +143,24 @@ class DatabaseService:
 
         except Exception as e:
             print(f"Error fetching unique values for {column}: {e}")
+            return []
+
+    def get_unique_source_types(self) -> List[str]:
+        """Get unique source types from orders table."""
+        try:
+            con = self.get_connection()
+            query = """
+                SELECT DISTINCT source_type
+                FROM orders
+                WHERE source_type IS NOT NULL AND source_type != ''
+                ORDER BY source_type
+            """
+
+            result = con.execute(query).fetchall()
+            return [str(row[0]) for row in result if row[0] is not None]
+
+        except Exception as e:
+            print(f"Error fetching unique source types: {e}")
             return []
 
     def get_orders_error_data(self) -> List[Dict[str, Any]]:
@@ -300,6 +319,89 @@ class DatabaseService:
         except Exception:
             print("Error fetching monthly completed tasks: {e}")
             return 0
+
+    def get_non_existing_codes(self) -> List[Dict[str, Any]]:
+        """
+        Fetch non-existing product codes from the non_existing_codes table.
+        Returns data formatted for the product codes table.
+        """
+        try:
+            con = self.get_connection()
+            query = """
+                SELECT
+                    ROW_NUMBER() OVER (ORDER BY product_code) as id,
+                    product_code as "product_code"
+                FROM non_existing_codes
+                WHERE product_code IS NOT NULL AND product_code != ''
+                ORDER BY product_code
+                LIMIT 500
+            """
+
+            df = con.execute(query).df()
+
+            # Convert DataFrame to list of dictionaries
+            records = df.to_dict("records")
+
+            # Ensure all values are JSON serializable
+            for record in records:
+                for key, value in record.items():
+                    if key == "id":
+                        record[key] = int(value) if value is not None else 0
+                    elif pd.isna(value):
+                        record[key] = ""
+                    else:
+                        record[key] = str(value) if value is not None else ""
+
+            return records
+
+        except Exception as e:
+            print(f"Error fetching non-existing codes: {e}")
+            return []
+
+    def get_orders_status_summary(self) -> Dict[str, Any]:
+        """
+        Get summary of offline vs online orders based on some criteria.
+        This is a placeholder - adjust the logic based on your actual data structure.
+        """
+        try:
+            con = self.get_connection()
+
+            # Assuming online/offline is determined by some field like 'channel' or based on error_code
+            # Adjust this query based on your actual data structure
+            query = """
+                SELECT
+                    COUNT(*) as total_orders,
+                    COUNT(CASE WHEN error_code IS NULL OR error_code = '' THEN 1 END) as online_orders,
+                    COUNT(CASE WHEN error_code IS NOT NULL AND error_code != '' THEN 1 END) as offline_orders
+                FROM orders
+            """
+
+            result = con.execute(query).fetchone()
+
+            total = int(result[0]) if result[0] else 0
+            online = int(result[1]) if result[1] else 0
+            offline = int(result[2]) if result[2] else 0
+
+            online_percent = (online / total * 100) if total > 0 else 0
+            offline_percent = (offline / total * 100) if total > 0 else 0
+
+            return {
+                "total_orders": total,
+                "online_orders": online,
+                "offline_orders": offline,
+                "online_percent": round(online_percent, 1),
+                "offline_percent": round(offline_percent, 1)
+            }
+
+        except Exception as e:
+            print(f"Error fetching orders status summary: {e}")
+            return {
+                "total_orders": 0,
+                "online_orders": 0,
+                "offline_orders": 0,
+                "online_percent": 0.0,
+                "offline_percent": 0.0
+            }
 
 
 # Global database service instance
