@@ -216,7 +216,11 @@ def details_table(is_secondary: bool = False) -> rx.Component:
                                     ),
                                 ),
                             ),
-                            class_name="hover:bg-gray-50 bg-white",
+                            class_name=rx.cond(
+                                selected_rows.contains(row["id"]),
+                                "bg-gray-50 hover:bg-gray-50",
+                                "hover:bg-gray-50 bg-white",
+                            ),
                         ),
                     ),
                     class_name="divide-y divide-gray-100",

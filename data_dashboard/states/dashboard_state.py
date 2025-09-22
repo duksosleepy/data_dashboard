@@ -933,8 +933,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_csv(self):
-        """Download the filtered and sorted data as CSV."""
-        df = pd.DataFrame(self.filtered_and_sorted_data)
+        """Download the data as CSV - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.selected_rows:
+            data_to_export = [
+                item for item in self.filtered_and_sorted_data
+                if item["id"] in self.selected_rows
+            ]
+        else:
+            data_to_export = self.filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower().replace(" ", "_")
             for col in self.column_names
@@ -963,8 +972,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_xlsx(self):
-        """Download the filtered and sorted data as XLSX."""
-        df = pd.DataFrame(self.filtered_and_sorted_data)
+        """Download the data as XLSX - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.selected_rows:
+            data_to_export = [
+                item for item in self.filtered_and_sorted_data
+                if item["id"] in self.selected_rows
+            ]
+        else:
+            data_to_export = self.filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower().replace(" ", "_")
             for col in self.column_names
@@ -1176,8 +1194,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_secondary_csv(self):
-        """Download the secondary filtered and sorted data as CSV."""
-        df = pd.DataFrame(self.secondary_filtered_and_sorted_data)
+        """Download the secondary data as CSV - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.secondary_selected_rows:
+            data_to_export = [
+                item for item in self.secondary_filtered_and_sorted_data
+                if item["id"] in self.secondary_selected_rows
+            ]
+        else:
+            data_to_export = self.secondary_filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower().replace(" ", "_")
             for col in self.column_names
@@ -1188,12 +1215,8 @@ class DashboardState(rx.State):
         if "costs" in df.columns and "costs" in display_columns:
             pass
         column_mapping = {
-            "owner": "Owner",
-            "status": "Status",
-            "region": "Region",
-            "stability": "Stability",
-            "costs": "Costs",
-            "last_edited": "Last edited",
+            "order_id": "Mã đơn hàng",
+            "error_code": "Thông báo lỗi",
         }
         df_display = df[[key for key in column_mapping if key in df.columns]]
         df_display.columns = [column_mapping[col] for col in df_display.columns]
@@ -1206,8 +1229,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_secondary_xlsx(self):
-        """Download the secondary filtered and sorted data as XLSX."""
-        df = pd.DataFrame(self.secondary_filtered_and_sorted_data)
+        """Download the secondary data as XLSX - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.secondary_selected_rows:
+            data_to_export = [
+                item for item in self.secondary_filtered_and_sorted_data
+                if item["id"] in self.secondary_selected_rows
+            ]
+        else:
+            data_to_export = self.secondary_filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower().replace(" ", "_")
             for col in self.column_names
@@ -1218,12 +1250,8 @@ class DashboardState(rx.State):
         if "costs" in df.columns and "costs" in display_columns:
             pass
         column_mapping = {
-            "owner": "Owner",
-            "status": "Status",
-            "region": "Region",
-            "stability": "Stability",
-            "costs": "Costs",
-            "last_edited": "Last edited",
+            "order_id": "Mã đơn hàng",
+            "error_code": "Thông báo lỗi",
         }
         df_display = df[[key for key in column_mapping if key in df.columns]]
         df_display.columns = [column_mapping[col] for col in df_display.columns]
@@ -1421,8 +1449,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_orders_csv(self):
-        """Download the orders filtered and sorted data as CSV."""
-        df = pd.DataFrame(self.orders_filtered_and_sorted_data)
+        """Download the orders data as CSV - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.orders_selected_rows:
+            data_to_export = [
+                item for item in self.orders_filtered_and_sorted_data
+                if item["id"] in self.orders_selected_rows
+            ]
+        else:
+            data_to_export = self.orders_filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower()
             .replace(" ", "_")
@@ -1440,7 +1477,6 @@ class DashboardState(rx.State):
             "order_id": "Mã đơn hàng",
             "customer_name": "Tên khách hàng",
             "phone_number": "Số điện thoại",
-            "source_type": "Nguồn",
             "district": "Quận huyện",
             "ward": "Phường xã",
             "address": "Địa chỉ",
@@ -1462,8 +1498,17 @@ class DashboardState(rx.State):
 
     @rx.event
     def download_orders_xlsx(self):
-        """Download the orders filtered and sorted data as XLSX."""
-        df = pd.DataFrame(self.orders_filtered_and_sorted_data)
+        """Download the orders data as XLSX - selected rows if any are selected, otherwise all filtered data."""
+        # If rows are selected, export only selected rows, otherwise export all filtered data
+        if self.orders_selected_rows:
+            data_to_export = [
+                item for item in self.orders_filtered_and_sorted_data
+                if item["id"] in self.orders_selected_rows
+            ]
+        else:
+            data_to_export = self.orders_filtered_and_sorted_data
+
+        df = pd.DataFrame(data_to_export)
         display_columns = [
             col.lower()
             .replace(" ", "_")
@@ -1481,7 +1526,6 @@ class DashboardState(rx.State):
             "order_id": "Mã đơn hàng",
             "customer_name": "Tên khách hàng",
             "phone_number": "Số điện thoại",
-            "source_type": "Nguồn",
             "district": "Quận huyện",
             "ward": "Phường xã",
             "address": "Địa chỉ",

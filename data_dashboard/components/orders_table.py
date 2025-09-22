@@ -165,7 +165,11 @@ def orders_table() -> rx.Component:
                                 ),
                                 class_name="px-3 py-2 whitespace-nowrap text-right text-sm font-medium border-b border-gray-100",
                             ),
-                            class_name="hover:bg-gray-50 bg-white",
+                            class_name=rx.cond(
+                                DashboardState.orders_selected_rows.contains(row["id"]),
+                                "bg-gray-50 hover:bg-gray-50",
+                                "hover:bg-gray-50 bg-white",
+                            ),
                         ),
                     ),
                     class_name="divide-y divide-gray-100",

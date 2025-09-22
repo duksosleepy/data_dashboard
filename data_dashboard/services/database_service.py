@@ -207,6 +207,7 @@ class DatabaseService:
         """
         Fetch daily task statistics from daily_task_stats table.
         Returns data formatted for the chart with zero-filling for missing days.
+        Data is grouped by the created_at field converted to date.
         """
         try:
             con = self.get_connection()
@@ -215,23 +216,24 @@ class DatabaseService:
             query = f"""
                 WITH date_series AS (
                     SELECT
-                        (CURRENT_DATE - INTERVAL (generate_series) DAY)::DATE as stat_date
+                        (CURRENT_DATE - INTERVAL (generate_series) DAY)::DATE as chart_date
                     FROM generate_series(0, {days - 1})
                 ),
                 stats_data AS (
                     SELECT
-                        stat_date,
-                        COALESCE(completed_tasks, 0) as completed_tasks,
-                        COALESCE(failed_tasks, 0) as failed_tasks
+                        chart_date,
+                        COALESCE(SUM(completed_tasks), 0) as completed_tasks,
+                        COALESCE(SUM(failed_tasks), 0) as failed_tasks
                     FROM date_series
-                    LEFT JOIN daily_task_stats USING (stat_date)
+                    LEFT JOIN daily_task_stats ON DATE(daily_task_stats.created_at) = chart_date
+                    GROUP BY chart_date
                 )
                 SELECT
-                    stat_date,
+                    chart_date,
                     completed_tasks,
                     failed_tasks
                 FROM stats_data
-                ORDER BY stat_date ASC
+                ORDER BY chart_date ASC
             """
 
             df = con.execute(query).df()
@@ -239,7 +241,7 @@ class DatabaseService:
             # Convert to chart format
             records = []
             for _, row in df.iterrows():
-                date_obj = pd.to_datetime(row["stat_date"])
+                date_obj = pd.to_datetime(row["chart_date"])
                 records.append(
                     {
                         "date": date_obj.strftime("%b %d"),
@@ -289,35 +291,35 @@ class DatabaseService:
             return 0.0
 
     def get_monthly_failed_tasks(self, months_ago: int = 0) -> int:
-        """Get total failed tasks for a specific month."""
+        """Get total failed tasks for a specific month based on created_at."""
         try:
             con = self.get_connection()
             query = f"""
                 SELECT COALESCE(SUM(failed_tasks), 0) as total_failed
                 FROM daily_task_stats
-                WHERE EXTRACT(YEAR FROM stat_date) = EXTRACT(YEAR FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
-                AND EXTRACT(MONTH FROM stat_date) = EXTRACT(MONTH FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
+                WHERE EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
+                AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
             """
             result = con.execute(query).fetchone()
             return int(result[0]) if result[0] else 0
-        except Exception:
-            print("Error fetching monthly failed tasks: {e}")
+        except Exception as e:
+            print(f"Error fetching monthly failed tasks: {e}")
             return 0
 
     def get_monthly_completed_tasks(self, months_ago: int = 0) -> int:
-        """Get total completed tasks for a specific month."""
+        """Get total completed tasks for a specific month based on created_at."""
         try:
             con = self.get_connection()
             query = f"""
                 SELECT COALESCE(SUM(completed_tasks), 0) as total_completed
                 FROM daily_task_stats
-                WHERE EXTRACT(YEAR FROM stat_date) = EXTRACT(YEAR FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
-                AND EXTRACT(MONTH FROM stat_date) = EXTRACT(MONTH FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
+                WHERE EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
+                AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM (CURRENT_DATE - INTERVAL '{months_ago} month'))
             """
             result = con.execute(query).fetchone()
             return int(result[0]) if result[0] else 0
-        except Exception:
-            print("Error fetching monthly completed tasks: {e}")
+        except Exception as e:
+            print(f"Error fetching monthly completed tasks: {e}")
             return 0
 
     def get_non_existing_codes(self) -> List[Dict[str, Any]]:
