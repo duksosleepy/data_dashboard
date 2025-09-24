@@ -362,19 +362,17 @@ class DatabaseService:
 
     def get_orders_status_summary(self) -> Dict[str, Any]:
         """
-        Get summary of offline vs online orders based on some criteria.
-        This is a placeholder - adjust the logic based on your actual data structure.
+        Get summary of offline vs online orders based on source_type field.
         """
         try:
             con = self.get_connection()
 
-            # Assuming online/offline is determined by some field like 'channel' or based on error_code
-            # Adjust this query based on your actual data structure
+            # Use source_type field to determine online vs offline orders
             query = """
                 SELECT
                     COUNT(*) as total_orders,
-                    COUNT(CASE WHEN error_code IS NULL OR error_code = '' THEN 1 END) as online_orders,
-                    COUNT(CASE WHEN error_code IS NOT NULL AND error_code != '' THEN 1 END) as offline_orders
+                    COUNT(CASE WHEN source_type = 'online' THEN 1 END) as online_orders,
+                    COUNT(CASE WHEN source_type = 'offline' THEN 1 END) as offline_orders
                 FROM orders
             """
 
