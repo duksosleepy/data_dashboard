@@ -85,13 +85,18 @@ class DashboardState(rx.State):
     orders_selected_products: Set[str] = set()
     orders_min_revenue: Optional[float] = None
     orders_max_revenue: Optional[float] = None
+    orders_start_date: Optional[str] = None
+    orders_end_date: Optional[str] = None
     orders_temp_selected_types: Set[str] = set()
     orders_temp_selected_products: Set[str] = set()
     orders_temp_min_revenue_str: str = ""
     orders_temp_max_revenue_str: str = ""
+    orders_temp_start_date: str = ""
+    orders_temp_end_date: str = ""
     show_orders_type_filter: bool = False
     show_orders_product_filter: bool = False
     show_orders_revenue_filter: bool = False
+    show_orders_date_filter: bool = False
     orders_sort_column: Optional[str] = None
     orders_sort_ascending: bool = True
     orders_selected_rows: Set[int] = set()
@@ -105,13 +110,18 @@ class DashboardState(rx.State):
     selected_regions: Set[str] = set()
     min_cost: Optional[float] = None
     max_cost: Optional[float] = None
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
     temp_selected_statuses: Set[str] = set()
     temp_selected_regions: Set[str] = set()
     temp_min_cost_str: str = ""
     temp_max_cost_str: str = ""
+    temp_start_date: str = ""
+    temp_end_date: str = ""
     show_status_filter: bool = False
     show_region_filter: bool = False
     show_costs_filter: bool = False
+    show_date_filter: bool = False
     sort_column: Optional[str] = None
     sort_ascending: bool = True
     selected_rows: Set[int] = set()
@@ -221,6 +231,18 @@ class DashboardState(rx.State):
                 item
                 for item in data
                 if float(item["revenue"] or 0) <= self.orders_max_revenue
+            ]
+        if self.orders_start_date is not None:
+            data = [
+                item
+                for item in data
+                if item["order_date"] and item["order_date"] >= self.orders_start_date
+            ]
+        if self.orders_end_date is not None:
+            data = [
+                item
+                for item in data
+                if item["order_date"] and item["order_date"] <= self.orders_end_date
             ]
         return data
 
@@ -415,7 +437,28 @@ class DashboardState(rx.State):
             data = [item for item in data if item["costs"] >= self.min_cost]
         if self.max_cost is not None:
             data = [item for item in data if item["costs"] <= self.max_cost]
+        if self.start_date is not None:
+            data = [
+                item
+                for item in data
+                if item["last_edited"] and self._parse_date_for_comparison(item["last_edited"]) >= self.start_date
+            ]
+        if self.end_date is not None:
+            data = [
+                item
+                for item in data
+                if item["last_edited"] and self._parse_date_for_comparison(item["last_edited"]) <= self.end_date
+            ]
         return data
+
+    def _parse_date_for_comparison(self, date_str: str) -> str:
+        """Parse the date string from 'DD/MM/YYYY HH:MM' format to 'YYYY-MM-DD' for comparison."""
+        try:
+            date_part = date_str.split(' ')[0]  # Get just the date part
+            day, month, year = date_part.split('/')
+            return f"{year}-{month.zfill(2)}-{day.zfill(2)}"
+        except (ValueError, IndexError):
+            return "1900-01-01"  # Fallback date
 
     @rx.var
     def filtered_and_sorted_data(self) -> List[DetailEntry]:
@@ -808,6 +851,7 @@ class DashboardState(rx.State):
         self.show_status_filter = is_opening
         self.show_region_filter = False
         self.show_costs_filter = False
+        self.show_date_filter = False
         if is_opening:
             self.temp_selected_statuses = self.selected_statuses.copy()
 
@@ -816,6 +860,7 @@ class DashboardState(rx.State):
         self.show_region_filter = is_opening
         self.show_status_filter = False
         self.show_costs_filter = False
+        self.show_date_filter = False
         if is_opening:
             self.temp_selected_regions = self.selected_regions.copy()
 
@@ -824,12 +869,27 @@ class DashboardState(rx.State):
         self.show_costs_filter = is_opening
         self.show_status_filter = False
         self.show_region_filter = False
+        self.show_date_filter = False
         if is_opening:
             self.temp_min_cost_str = (
                 str(self.min_cost) if self.min_cost is not None else ""
             )
             self.temp_max_cost_str = (
                 str(self.max_cost) if self.max_cost is not None else ""
+            )
+
+    def toggle_date_filter(self):
+        is_opening = not self.show_date_filter
+        self.show_date_filter = is_opening
+        self.show_status_filter = False
+        self.show_region_filter = False
+        self.show_costs_filter = False
+        if is_opening:
+            self.temp_start_date = (
+                self.start_date if self.start_date is not None else ""
+            )
+            self.temp_end_date = (
+                self.end_date if self.end_date is not None else ""
             )
 
     def toggle_temp_status(self, status: str):
@@ -849,6 +909,12 @@ class DashboardState(rx.State):
 
     def set_temp_max_cost(self, value: str):
         self.temp_max_cost_str = value
+
+    def set_temp_start_date(self, value: str):
+        self.temp_start_date = value
+
+    def set_temp_end_date(self, value: str):
+        self.temp_end_date = value
 
     def apply_status_filter(self):
         self.selected_statuses = self.temp_selected_statuses.copy()
@@ -898,6 +964,24 @@ class DashboardState(rx.State):
         self.show_costs_filter = False
         self.current_page = 1
 
+    def apply_date_filter(self):
+        self.start_date = (
+            self.temp_start_date if self.temp_start_date else None
+        )
+        self.end_date = (
+            self.temp_end_date if self.temp_end_date else None
+        )
+        self.show_date_filter = False
+        self.current_page = 1
+
+    def reset_date_filter(self):
+        self.temp_start_date = ""
+        self.temp_end_date = ""
+        self.start_date = None
+        self.end_date = None
+        self.show_date_filter = False
+        self.current_page = 1
+
     def reset_all_filters(self):
         """Reset all filters and search."""
         self.search_owner = ""
@@ -905,13 +989,18 @@ class DashboardState(rx.State):
         self.selected_regions = set()
         self.min_cost = None
         self.max_cost = None
+        self.start_date = None
+        self.end_date = None
         self.temp_selected_statuses = set()
         self.temp_selected_regions = set()
         self.temp_min_cost_str = ""
         self.temp_max_cost_str = ""
+        self.temp_start_date = ""
+        self.temp_end_date = ""
         self.show_status_filter = False
         self.show_region_filter = False
         self.show_costs_filter = False
+        self.show_date_filter = False
         self.current_page = 1
         self.selected_rows = set()
         self.sort_column = None
@@ -1311,6 +1400,7 @@ class DashboardState(rx.State):
         self.show_orders_type_filter = is_opening
         self.show_orders_product_filter = False
         self.show_orders_revenue_filter = False
+        self.show_orders_date_filter = False
         if is_opening:
             self.orders_temp_selected_types = (
                 self.orders_selected_types.copy()
@@ -1321,6 +1411,7 @@ class DashboardState(rx.State):
         self.show_orders_product_filter = is_opening
         self.show_orders_type_filter = False
         self.show_orders_revenue_filter = False
+        self.show_orders_date_filter = False
         if is_opening:
             self.orders_temp_selected_products = (
                 self.orders_selected_products.copy()
@@ -1331,6 +1422,7 @@ class DashboardState(rx.State):
         self.show_orders_revenue_filter = is_opening
         self.show_orders_type_filter = False
         self.show_orders_product_filter = False
+        self.show_orders_date_filter = False
         if is_opening:
             self.orders_temp_min_revenue_str = (
                 str(self.orders_min_revenue)
@@ -1341,6 +1433,20 @@ class DashboardState(rx.State):
                 str(self.orders_max_revenue)
                 if self.orders_max_revenue is not None
                 else ""
+            )
+
+    def toggle_orders_date_filter(self):
+        is_opening = not self.show_orders_date_filter
+        self.show_orders_date_filter = is_opening
+        self.show_orders_type_filter = False
+        self.show_orders_product_filter = False
+        self.show_orders_revenue_filter = False
+        if is_opening:
+            self.orders_temp_start_date = (
+                self.orders_start_date if self.orders_start_date is not None else ""
+            )
+            self.orders_temp_end_date = (
+                self.orders_end_date if self.orders_end_date is not None else ""
             )
 
     def toggle_orders_temp_type(self, source_type: str):
@@ -1360,6 +1466,12 @@ class DashboardState(rx.State):
 
     def set_orders_temp_max_revenue(self, value: str):
         self.orders_temp_max_revenue_str = value
+
+    def set_orders_temp_start_date(self, value: str):
+        self.orders_temp_start_date = value
+
+    def set_orders_temp_end_date(self, value: str):
+        self.orders_temp_end_date = value
 
     def apply_orders_type_filter(self):
         self.orders_selected_types = (
@@ -1413,6 +1525,24 @@ class DashboardState(rx.State):
         self.show_orders_revenue_filter = False
         self.orders_current_page = 1
 
+    def apply_orders_date_filter(self):
+        self.orders_start_date = (
+            self.orders_temp_start_date if self.orders_temp_start_date else None
+        )
+        self.orders_end_date = (
+            self.orders_temp_end_date if self.orders_temp_end_date else None
+        )
+        self.show_orders_date_filter = False
+        self.orders_current_page = 1
+
+    def reset_orders_date_filter(self):
+        self.orders_temp_start_date = ""
+        self.orders_temp_end_date = ""
+        self.orders_start_date = None
+        self.orders_end_date = None
+        self.show_orders_date_filter = False
+        self.orders_current_page = 1
+
     def reset_all_orders_filters(self):
         """Reset all orders filters and search."""
         self.orders_search_customer = ""
@@ -1420,13 +1550,18 @@ class DashboardState(rx.State):
         self.orders_selected_products = set()
         self.orders_min_revenue = None
         self.orders_max_revenue = None
+        self.orders_start_date = None
+        self.orders_end_date = None
         self.orders_temp_selected_types = set()
         self.orders_temp_selected_products = set()
         self.orders_temp_min_revenue_str = ""
         self.orders_temp_max_revenue_str = ""
+        self.orders_temp_start_date = ""
+        self.orders_temp_end_date = ""
         self.show_orders_type_filter = False
         self.show_orders_product_filter = False
         self.show_orders_revenue_filter = False
+        self.show_orders_date_filter = False
         self.orders_current_page = 1
         self.orders_selected_rows = set()
         self.orders_sort_column = None

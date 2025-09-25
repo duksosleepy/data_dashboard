@@ -62,7 +62,6 @@ class DatabaseService:
                     source_type as "source_type"
                 FROM orders
                 ORDER BY order_date DESC
-                LIMIT 1000
             """
 
             df = con.execute(query).df()
@@ -178,7 +177,6 @@ class DatabaseService:
                 FROM orders
                 WHERE order_id IS NOT NULL
                 ORDER BY order_id
-                LIMIT 1000
             """
 
             df = con.execute(query).df()
@@ -336,7 +334,6 @@ class DatabaseService:
                 FROM non_existing_codes
                 WHERE product_code IS NOT NULL AND product_code != ''
                 ORDER BY product_code
-                LIMIT 500
             """
 
             df = con.execute(query).df()

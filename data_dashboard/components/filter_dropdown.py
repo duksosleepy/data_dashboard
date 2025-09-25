@@ -316,6 +316,65 @@ def orders_revenue_filter_dropdown() -> rx.Component:
     )
 
 
+def date_filter_dropdown(is_orders: bool = False) -> rx.Component:
+    """Dropdown component for filtering by date range."""
+    if is_orders:
+        temp_start_date = DashboardState.orders_temp_start_date
+        temp_end_date = DashboardState.orders_temp_end_date
+        show_filter = DashboardState.show_orders_date_filter
+        set_temp_start = DashboardState.set_orders_temp_start_date
+        set_temp_end = DashboardState.set_orders_temp_end_date
+        reset_filter = DashboardState.reset_orders_date_filter
+        apply_filter = DashboardState.apply_orders_date_filter
+    else:
+        temp_start_date = DashboardState.temp_start_date
+        temp_end_date = DashboardState.temp_end_date
+        show_filter = DashboardState.show_date_filter
+        set_temp_start = DashboardState.set_temp_start_date
+        set_temp_end = DashboardState.set_temp_end_date
+        reset_filter = DashboardState.reset_date_filter
+        apply_filter = DashboardState.apply_date_filter
+
+    return rx.el.div(
+        rx.el.p(
+            "Filter by Date Range",
+            class_name="text-xs font-semibold text-gray-500 px-3 pt-2 pb-1",
+        ),
+        rx.el.div(
+            rx.el.input(
+                type="date",
+                placeholder="Start date",
+                on_change=set_temp_start,
+                class_name="w-full p-2 border border-gray-300 rounded text-sm mb-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500",
+                value=temp_start_date,
+            ),
+            rx.el.input(
+                type="date",
+                placeholder="End date",
+                on_change=set_temp_end,
+                class_name="w-full p-2 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500",
+                value=temp_end_date,
+            ),
+            class_name="p-2",
+        ),
+        rx.el.div(
+            rx.el.button(
+                "Reset",
+                on_click=reset_filter,
+                class_name="px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded",
+            ),
+            rx.el.button(
+                "Apply",
+                on_click=apply_filter,
+                class_name="px-3 py-1 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded",
+            ),
+            class_name="flex justify-end space-x-2 p-2 border-t border-gray-200",
+        ),
+        class_name="absolute top-full left-0 mt-1 w-48 border border-gray-300 rounded z-50 bg-white shadow-lg",
+        hidden=~show_filter,
+    )
+
+
 def export_dropdown(
     show_dropdown: rx.Var[bool],
     csv_action: EventSpec,

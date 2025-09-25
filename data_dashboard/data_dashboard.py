@@ -3,6 +3,7 @@ import reflex as rx
 from data_dashboard.components.details_table import details_table
 from data_dashboard.components.filter_dropdown import (
     costs_filter_dropdown,
+    date_filter_dropdown,
     export_dropdown,
     filter_button,
     orders_product_filter_dropdown,
@@ -73,6 +74,17 @@ def orders_table_header() -> rx.Component:
                     class_name="relative",
                 ),
                 rx.el.div(
+                    filter_button(
+                        "Date",
+                        on_click=DashboardState.toggle_orders_date_filter,
+                        is_active=DashboardState.show_orders_date_filter,
+                        has_filter=DashboardState.orders_start_date
+                        | DashboardState.orders_end_date,
+                    ),
+                    date_filter_dropdown(is_orders=True),
+                    class_name="relative",
+                ),
+                rx.el.div(
                     rx.el.div(
                         rx.icon(
                             tag="search",
@@ -103,7 +115,9 @@ def orders_table_header() -> rx.Component:
                             == 0
                         )
                         & (DashboardState.orders_min_revenue is None)
-                        & (DashboardState.orders_max_revenue is None),
+                        & (DashboardState.orders_max_revenue is None)
+                        & (DashboardState.orders_start_date is None)
+                        & (DashboardState.orders_end_date is None),
                     ),
                     rx.el.button(
                         rx.icon(
@@ -204,6 +218,17 @@ def data_table_header() -> rx.Component:
                     class_name="relative",
                 ),
                 rx.el.div(
+                    filter_button(
+                        "Date",
+                        on_click=DashboardState.toggle_date_filter,
+                        is_active=DashboardState.show_date_filter,
+                        has_filter=DashboardState.start_date
+                        | DashboardState.end_date,
+                    ),
+                    date_filter_dropdown(is_orders=False),
+                    class_name="relative",
+                ),
+                rx.el.div(
                     rx.el.div(
                         rx.icon(
                             tag="search",
@@ -228,7 +253,9 @@ def data_table_header() -> rx.Component:
                         & (DashboardState.selected_statuses.length() == 0)
                         & (DashboardState.selected_regions.length() == 0)
                         & (DashboardState.min_cost is None)
-                        & (DashboardState.max_cost is None),
+                        & (DashboardState.max_cost is None)
+                        & (DashboardState.start_date is None)
+                        & (DashboardState.end_date is None),
                     ),
                     rx.el.button(
                         rx.icon(
